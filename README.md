@@ -1,4 +1,4 @@
-SARLIB: Statistical Analysis and Regression Library
+SARlib: Statistical Analysis and Regression Library
 ================================================================================
 
 This library provides tools for statistical analysis, regression modeling, 
@@ -9,8 +9,12 @@ well as utilities for data preprocessing and plotting.
 Installation
 --------------------------------------------------------------------------------
 
-sarlib is a standalone Python module. To use it, ensure you have the following 
-dependencies installed:
+SARlib can be installed via PyPI:
+
+    pip install sarlib
+
+Alternatively, you can install it manually by downloading the source code. In that
+case, make sure you have the following dependencies installed:
 
 - numpy
 - matplotlib
@@ -18,9 +22,6 @@ dependencies installed:
 - scikit-learn
 - scipy
 
-You can install these with pip:
-
-    pip install numpy matplotlib statsmodels scikit-learn scipy
 
 Usage
 --------------------------------------------------------------------------------
