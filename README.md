@@ -1,4 +1,3 @@
-================================================================================
 SARLIB: Statistical Analysis and Regression Library
 ================================================================================
 
@@ -8,7 +7,7 @@ This library provides tools for statistical analysis, regression modeling,
 sample size analysis, and visualization. It includes OLS and SAR models, as 
 well as utilities for data preprocessing and plotting.
 
---------------------------------------------------------------------------------
+
 Installation
 --------------------------------------------------------------------------------
 
@@ -25,7 +24,7 @@ You can install these with pip:
 
     pip install numpy matplotlib statsmodels scikit-learn scipy
 
---------------------------------------------------------------------------------
+
 Usage
 --------------------------------------------------------------------------------
 
@@ -35,7 +34,7 @@ Import the module in your Python script:
 
 Or copy the code into your project and import the classes/functions as needed.
 
---------------------------------------------------------------------------------
+
 Main Components
 --------------------------------------------------------------------------------
 
@@ -52,7 +51,7 @@ Main Components
 - SampleSizeAnalysis:      Analyzes the effect of sample size on model 
                            performance and statistics.
 
---------------------------------------------------------------------------------
+
 Example Workflow
 --------------------------------------------------------------------------------
 
@@ -83,14 +82,14 @@ Example Workflow
     analysis.plot_pvalue()
     analysis.plot_coef()
 
---------------------------------------------------------------------------------
+
 Function/Class Documentation
 --------------------------------------------------------------------------------
 
 All functions and classes are documented with docstrings. Please refer to the 
 code for parameter details and usage.
 
---------------------------------------------------------------------------------
+
 License & Author
 --------------------------------------------------------------------------------
 
