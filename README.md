@@ -5,6 +5,14 @@ This library provides tools for statistical analysis, regression modeling,
 sample size analysis, and visualization. It includes OLS and SAR models, as 
 well as utilities for data preprocessing and plotting.
 
+A formal description and analysis are included in the following reference:
+
+J. M. Gorriz, J. Ramirez, F. Segovia, C. Jimenez-Mesa, F. J. Martinez-Murcia, y J. Suckling, 
+_«Statistical agnostic regression: A machine learning method to validate regression models»_, 
+Journal of Advanced Research, may 2025, 
+doi: [10.1016/j.jare.2025.04.026](https://doi.org/10.1016/j.jare.2025.04.026).
+
+
 
 Installation
 --------------------------------------------------------------------------------
@@ -38,18 +46,22 @@ Or copy the code into your project and import the classes/functions as needed.
 Main Components
 --------------------------------------------------------------------------------
 
-- fix_data(x, y):          Standardizes and cleans input data.
+Classes:
 
-- show_scatter(x, y, ...): Visualizes predictors vs. response.
+- `SAR`:                     Statistical Analysis Regression with PAC-Bayes, 
+                             Vapnik, and IGP bounds.
 
-- OLS:                     Ordinary Least Squares regression with
-                           permutation-based significance and power analysis.
+- `OLS`:                     Ordinary Least Squares regression with
+                             permutation-based significance and power analysis.
 
-- SAR:                     Statistical Analysis Regression with PAC-Bayes, 
-                           Vapnik, and IGP bounds.
+- `SampleSizeAnalysis`:      Analyzes the effect of sample size on model 
+                             performance and statistics.
 
-- SampleSizeAnalysis:      Analyzes the effect of sample size on model 
-                           performance and statistics.
+Functions:
+
+- `fix_data(x, y)`:          Standardizes and cleans input data.
+
+- `show_scatter(x, y, ...)`: Visualizes predictors vs. response.
 
 
 Example Workflow
@@ -101,8 +113,16 @@ All functions and classes are documented with docstrings. Please refer to the
 code for parameter details and usage.
 
 
-License & Author
+Author & License
 --------------------------------------------------------------------------------
 
 Author: Sipba Group, UGR, https://sipba.ugr.es/
+
+Please cite:
+J. M. Gorriz, J. Ramirez, F. Segovia, C. Jimenez-Mesa, F. J. Martinez-Murcia, y J. Suckling, 
+_«Statistical agnostic regression: A machine learning method to validate regression models»_, 
+Journal of Advanced Research, may 2025, 
+doi: [10.1016/j.jare.2025.04.026](https://doi.org/10.1016/j.jare.2025.04.026).
+
+
 License: GPL Version 3
