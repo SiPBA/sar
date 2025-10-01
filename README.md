@@ -31,18 +31,6 @@ case, make sure you have the following dependencies installed:
 - scipy
 
 
-Usage
---------------------------------------------------------------------------------
-
-Import the module in your Python script:
-
-   ```python
-   import sarlib
-   ```
-
-Or copy the code into your project and import the classes/functions as needed.
-
-
 Main Components
 --------------------------------------------------------------------------------
 
@@ -64,7 +52,7 @@ Functions:
 - `show_scatter(x, y, ...)`: Visualizes predictors vs. response.
 
 
-Example Workflow
+Usage
 --------------------------------------------------------------------------------
 
 1. Import packages and prepare your data as numpy arrays:
