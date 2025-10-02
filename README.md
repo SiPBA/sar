@@ -1,4 +1,4 @@
-SARlib: Statistical Analysis and Regression Library
+SARlib: Statistical Agnostic Regression Library
 ================================================================================
 
 This library provides tools for statistical analysis, regression modeling, 
