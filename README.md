@@ -7,12 +7,28 @@ well as utilities for data preprocessing and plotting.
 
 A formal description and analysis are included in the following reference:
 
-J. M. Gorriz, J. Ramirez, F. Segovia, C. Jimenez-Mesa, F. J. Martinez-Murcia, y J. Suckling, 
-_«Statistical agnostic regression: A machine learning method to validate regression models»_, 
-Journal of Advanced Research, may 2025, 
+J. M. Gorriz, J. Ramirez, F. Segovia, C. Jimenez-Mesa, F. J. Martinez-Murcia, 
+y J. Suckling, _«Statistical agnostic regression: A machine learning method 
+to validate regression models»_, Journal of Advanced Research, may 2025, 
 doi: [10.1016/j.jare.2025.04.026](https://doi.org/10.1016/j.jare.2025.04.026).
 
 
+Features
+--------------------------------------------------------------------------------
+
+- **Data Preprocessing**:
+  Standardize and clean input data, handle missing values.
+- **Visualization**:
+  Scatter plots for exploratory data analysis.
+- **OLS Regression**:
+  Permutation-based p-value, power, R², and coefficient estimation.
+- **SAR Regression**:
+  Support Vector Regression with advanced generalization bounds.
+- **Sample Size Analysis**:
+  Empirical study of how sample size affects model statistics.
+- **Plotting Utilities**:
+  Visualize loss, threshold, power, p-value, and coefficients as functions of 
+  sample size.
 
 Installation
 --------------------------------------------------------------------------------
@@ -21,8 +37,8 @@ SARlib can be installed via PyPI:
 
     pip install sarlib
 
-Alternatively, you can install it manually by downloading the source code. In that
-case, make sure you have the following dependencies installed:
+Alternatively, you can install it manually by downloading the source code. In
+that case, make sure you have the following dependencies installed:
 
 - numpy
 - matplotlib
@@ -107,9 +123,9 @@ Author & License
 Author: Sipba Group, UGR, https://sipba.ugr.es/
 
 Please cite:
-J. M. Gorriz, J. Ramirez, F. Segovia, C. Jimenez-Mesa, F. J. Martinez-Murcia, y J. Suckling, 
-_«Statistical agnostic regression: A machine learning method to validate regression models»_, 
-Journal of Advanced Research, may 2025, 
+J. M. Gorriz, J. Ramirez, F. Segovia, C. Jimenez-Mesa, F. J. Martinez-Murcia, y 
+J. Suckling, _«Statistical agnostic regression: A machine learning method to 
+validate regression models»_, Journal of Advanced Research, may 2025, 
 doi: [10.1016/j.jare.2025.04.026](https://doi.org/10.1016/j.jare.2025.04.026).
 
 

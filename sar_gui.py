@@ -1,39 +1,111 @@
-from PySide6.QtCore import Qt, QThread, Signal
-from PySide6.QtGui import QFont, QImage, QIntValidator, QDoubleValidator, QPixmap
+"""
+Statistical Agnostic Regression GUI
+--------------------------------------------------------------------------------
+
+A PySide6-based GUI for Statistical Agnostic Regression (SAR) analysis.
+
+This application allows users to load CSV data, select response and predictor 
+variables, configure SAR analysis parameters, run the analysis, and visualize 
+results including sample size analysis plots.
+
+Dependencies:
+    - PySide6
+    - pandas
+    - sarlib (custom statistical analysis library)
+
+
+Author: Sipba Group, UGR, https://sipba.ugr.es/
+License: GPL Version 3
+"""
+
+from PySide6.QtCore import Qt, QThread, Signal 
+from PySide6.QtGui import QFont, QIntValidator, QDoubleValidator
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QMessageBox, 
-    QComboBox, QPushButton, QFileDialog, QListWidget, QLabel, QGridLayout,
-    QFrame, QLineEdit, QTextEdit, QProgressDialog
-)
+    QComboBox, QPushButton, QFileDialog, QListWidget, QLabel, QGridLayout, 
+    QFrame, QLineEdit, QTextEdit, QProgressDialog)
+
 import sys
 import pandas as pd
 import sarlib
 
 class Worker(QThread):
-    finished = Signal()
+    """
+    Worker thread for running long computations in the background.
+
+    Attributes:
+        finished (Signal): Signal emitted when the work is finished.
+
+    Methods:
+        __init__(fcn): Initialize the worker with a function to run.
+        run(): Execute the function and emit the finished signal.
+    """
+    finished = Signal()  # Signal emitted when work is finished
 
     def __init__(self, fcn):
+        """
+        Initialize the worker thread.
+
+        Parameters:
+            fcn (callable): Function to run in the thread.
+        """
         super().__init__()
         self.fcn = fcn
 
     def run(self):
+        """
+        Run the assigned function and emit finished signal.
+        """
         self.fcn()
         self.finished.emit()
 
 class MainWindow(QMainWindow):
+    """
+    Main application window for the SAR GUI.
+
+    This window provides the interface for loading data, selecting variables,
+    configuring SAR parameters, running the analysis, and visualizing results.
+
+    Attributes:
+        data (dict): Stores session data, including loaded DataFrame, file path,
+                     SAR model instance, and sample size analysis instance.
+
+    Methods:
+        initUI(): Set up the user interface components and layout.
+        enable_bound_params(): Enable/disable bound-specific parameter fields.
+        load_data(): Load a CSV file and populate variable selection lists.
+        get_xy(): Retrieve selected response and predictor columns as numpy arrays.
+        show_scatter(): Show scatter plots of predictors vs. response.
+        analize(): Run SAR analysis and display results.
+        show_stats(): Display SAR analysis results in the output text box.
+        compute_analysis(): Compute SAR analysis and store results.
+        compute_ssa(): Compute sample size analysis if not already computed.
+        plot_ssa(type): Plot sample size analysis results.
+        run_in_thread(job, after_job, title): Run a function in a background thread.
+    """
+
     def __init__(self):
+        """
+        Initialize the main window and set up the UI.
+        """
         super().__init__()
 
-        self.initUI()
+        self.initUI()  # Set up the user interface
 
+        # Data storage for the session
         self.data = {
-            'data': None,
-            'file': None,
-            'model': None,
-            'ssa': None
+            'data': None,      # Loaded DataFrame
+            'file': None,      # File path
+            'model': None,     # SAR model instance
+            'ssa': None        # SampleSizeAnalysis instance
         }
 
     def initUI(self):
+        """
+        Set up the user interface components and layout.
+
+        This method creates all widgets, layouts, and connects signals for the GUI.
+        """
         title = "Statistical Agnostic Regression"
         self.setWindowTitle(title)
         central = QWidget()
@@ -48,7 +120,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(title_label)
         layout.addWidget(subtitle_label)
 
-        # Frame for data file
+        # Frame for data file selection
         frm_file = QFrame()
         frm_file.setFrameShape(QFrame.StyledPanel)
         frm_file.setFrameShadow(QFrame.Plain)
@@ -62,7 +134,7 @@ class MainWindow(QMainWindow):
         lyt_file.addWidget(btn_load)
         layout.addWidget(frm_file)
 
-        # Frame for data and parameters
+        # Frame for data and parameter selection
         frm_data = QFrame()
         frm_data.setFrameShape(QFrame.StyledPanel)
         frm_data.setFrameShadow(QFrame.Plain)
@@ -87,36 +159,42 @@ class MainWindow(QMainWindow):
         lyt_params = QGridLayout(frm_params)
         lyt_data.addWidget(frm_params, 1, 2, 1, 1)
 
+        # Number of realizations
         lyt_params.addWidget(QLabel("Realizations:"), 0, 0, 1, 1)
         self.edt_realiz = QLineEdit("100", alignment=Qt.AlignRight)
         self.edt_realiz.setToolTip("Number of realizations (sampling) for the analysis")
         self.edt_realiz.setValidator(QIntValidator(1, 10000, self))
         lyt_params.addWidget(self.edt_realiz, 0, 1, 1, 1)
 
+        # Norm selection
         lyt_params.addWidget(QLabel("Norm:"), 1, 0, 1, 1)
         self.cmb_norm = QComboBox()
         self.cmb_norm.addItems(['rmse', 'epsins'])
         self.cmb_norm.setToolTip("Norm for the loss function: RMSE or Epsilon-insensitive")
         lyt_params.addWidget(self.cmb_norm, 1, 1, 1, 1)
 
+        # Training mode selection
         lyt_params.addWidget(QLabel("Training mode:"), 2, 0, 1, 1)
         self.cmb_mode = QComboBox()
         self.cmb_mode.addItems(['resusb', 'kfold', 'leaveoo'])
         self.cmb_mode.setToolTip("Training mode: Resusbtitution, K-Fold, or Leave-One-Out")
         lyt_params.addWidget(self.cmb_mode, 2, 1, 1, 1)
 
+        # Epsilon threshold
         lyt_params.addWidget(QLabel("Threshold eps value:"), 3, 0, 1, 1)
         self.edt_eps_0 = QLineEdit("", alignment=Qt.AlignRight)
         self.edt_eps_0.setToolTip("Value for epsilon-insensitive loss free parameter in threshold definition (leave empty for default)")
         self.edt_eps_0.setValidator(QDoubleValidator(0.0, 100.0, 2, self))
         lyt_params.addWidget(self.edt_eps_0, 3, 1, 1, 1)
 
+        # Alpha parameter
         lyt_params.addWidget(QLabel("Alpha:"), 4, 0, 1, 1)
         self.edt_alpha = QLineEdit("0.05", alignment=Qt.AlignRight)
         self.edt_alpha.setToolTip("Significance level for the classical analysis")
         self.edt_alpha.setValidator(QDoubleValidator(0.0, 1.0, 2, self))
         lyt_params.addWidget(self.edt_alpha, 4, 1, 1, 1)
 
+        # Upper Bound selection
         lyt_params.addWidget(QLabel("Upper Bound:"), 5, 0, 1, 1)
         self.cmb_bound = QComboBox()
         self.cmb_bound.addItems(['pacbayes', 'vapnik', 'igp', 'igp_approx'])
@@ -124,24 +202,27 @@ class MainWindow(QMainWindow):
         self.cmb_bound.currentTextChanged.connect(self.enable_bound_params)
         lyt_params.addWidget(self.cmb_bound, 5, 1, 1, 1)
 
+        # Eta parameter
         lyt_params.addWidget(QLabel("Eta:"), 6, 0, 1, 1)
         self.edt_eta = QLineEdit("0.50", alignment=Qt.AlignRight)
         self.edt_eta.setToolTip("Eta parameter for bound calculation")
         self.edt_eta.setValidator(QDoubleValidator(0.0, 1.0, 2, self))
         lyt_params.addWidget(self.edt_eta, 6, 1, 1, 1)
 
+        # Dropout rate parameter
         lyt_params.addWidget(QLabel("Dropout rate:"), 7, 0, 1, 1)
         self.edt_dropout = QLineEdit("0.50", alignment=Qt.AlignRight)
         self.edt_dropout.setToolTip("Dropout rate for bound calculation in PAC-Bayes Upper Bound")
         self.edt_dropout.setValidator(QDoubleValidator(0.0, 1.0, 2, self))
         lyt_params.addWidget(self.edt_dropout, 7, 1, 1, 1)
 
+        # Button to run analysis
         btn_analize = QPushButton("Run analysis")
         btn_analize.clicked.connect(self.analize)
         btn_analize.setToolTip("Run SAR analysis with the selected parameters")
         lyt_data.addWidget(btn_analize, 2, 2, 1, 1)
 
-        # Frame for analysis (SAR)
+        # Frame for analysis results
         frm_analysis = QFrame()
         frm_analysis.setFrameShape(QFrame.StyledPanel)
         frm_analysis.setFrameShadow(QFrame.Plain)
@@ -153,7 +234,7 @@ class MainWindow(QMainWindow):
         self.txt_analysis = QTextEdit(placeholderText="Analysis output...", readOnly=True)
         lyt_analysis.addWidget(self.txt_analysis, 1, 0, 1, 1)
 
-        # Frame para botones de Sample Size Analysis
+        # Frame for Sample Size Analysis buttons
         frm_sample = QFrame()
         frm_sample.setFrameShape(QFrame.StyledPanel)
         frm_sample.setFrameShadow(QFrame.Plain)
@@ -174,21 +255,33 @@ class MainWindow(QMainWindow):
         lyt_analysis.addWidget(frm_sample, 1, 1, 1, 1)
 
     def enable_bound_params(self):
+        """
+        Enable or disable bound-specific parameter fields based on the selected 
+        bound.
+
+        For 'pacbayes', both eta and dropout rate are enabled.
+        For other bounds, only eta is enabled.
+        """
         bound = self.cmb_bound.currentText()
         if bound == 'pacbayes':
             self.edt_eta.setEnabled(True)
             self.edt_dropout.setEnabled(True)
         else:
-            #self.edt_eta.setEnabled(False)
             self.edt_dropout.setEnabled(False)
 
     def load_data(self):
+        """
+        Open a file dialog to load a CSV file and populate the response and 
+        predictor lists.
+
+        Loads the selected CSV into a pandas DataFrame and updates the UI lists.
+        """
         title = "Please select a CSV file with the data"
         path, _ = QFileDialog.getOpenFileName(self, title, ".", "CSV (*.csv)")
         if not path: return
         self.edt_file.setText(path)
 
-        # Load CSV data
+        # Load CSV data into DataFrame
         df = pd.read_csv(path)
         cols = df.columns.tolist()
         self.lst_response.clear()
@@ -199,18 +292,29 @@ class MainWindow(QMainWindow):
         self.data['file'] = path
         self.data['data'] = df
 
+        # Select default response and predictors
         if cols:
             self.lst_response.setCurrentRow(0)
         for i in range(1, len(cols)):
             self.lst_predictors.item(i).setSelected(True)
 
     def get_xy(self):
+        """
+        Retrieve the selected response and predictor columns as numpy arrays.
+
+        Returns:
+            tuple: (x, y, predictor_cols, response_col)
+                x (np.ndarray): Predictor data.
+                y (np.ndarray): Response data.
+                predictor_cols (list): Names of selected predictor columns.
+                response_col (str): Name of selected response column.
+        """
         # Check if response or predictors are selected
         response_items = self.lst_response.selectedItems()
         predictor_items = self.lst_predictors.selectedItems()
         if not response_items or not predictor_items:
             QMessageBox.warning(self, "Selection error", 
-                        "Please select a response and at least one predictor.")
+                "Please select a response and at least one predictor.")
             return None, None, None, None
 
         # Get selected response and predictor columns
@@ -221,15 +325,25 @@ class MainWindow(QMainWindow):
         return x, y, predictor_cols, response_col
 
     def show_scatter(self):
+        """
+        Show scatter plots of the selected predictors vs. the response.
+
+        Uses sarlib.show_scatter to display the plots.
+        """
         x, y, predictor_cols, response_col = self.get_xy()
         if x is None or y is None: return
         sarlib.show_scatter(x, y, predictor_cols, response_col)
 
     def analize(self):
+        """
+        Run the SAR analysis with the selected parameters and display results.
+
+        Collects parameters from the UI, validates them, and runs the analysis
+        in a background thread.
+        """
         self.data['x'], self.data['y'], predictor_cols, response_col = self.get_xy()
         if self.data['x'] is None or self.data['y'] is None: return
-        msg = f"Analysis results for {response_col} vs {', '.join(predictor_cols)}:"
-        self.lbl_analysis.setText(msg)
+        self.lbl_analysis.setText(f"Analysis results for {response_col} vs {', '.join(predictor_cols)}:")
 
         # Get parameters for SAR analysis
         params = {}
@@ -243,7 +357,10 @@ class MainWindow(QMainWindow):
         params['eta'] = float(self.edt_eta.text())
         params['dropout_rate'] = float(self.edt_dropout.text())
 
-        if (not isinstance(params['n_realiz'], int)) or (isinstance(params['n_realiz'], int) and not (1 <= params['n_realiz'])): 
+        # Validate parameters
+        if ((not isinstance(params['n_realiz'], int)) or 
+                (isinstance(params['n_realiz'], int) and 
+                not (1 <= params['n_realiz']))): 
             QMessageBox.warning(self, "Invalid number of realization", 
                 "Number of realization must be an integer greater than 0.")
             return
@@ -258,15 +375,17 @@ class MainWindow(QMainWindow):
                 "Mode must be 'resusb', 'kfold' or 'leaveoo'.")
             return
 
-        if ((not isinstance(params['eps_0'], float) and params['eps_0'] is not None) 
-        or ((isinstance(params['eps_0'], float) and params['eps_0'] is not None) 
-        and params['eps_0'] < 0)):
+        if ((not isinstance(params['eps_0'], float) and 
+                params['eps_0'] is not None) or 
+                ((isinstance(params['eps_0'], float) and params['eps_0'] is not None) and 
+                 params['eps_0'] < 0)):
             QMessageBox.warning(self, "Invalid threshold epsilon free parameter", 
                 "Threshold epsilon value must be None or a real number greater than or equal to 0.")
             return
 
-        if ((not isinstance(params['alpha'], float)) 
-        or (isinstance(params['alpha'], float) and not (0 < params['alpha'] < 1))):
+        if ((not isinstance(params['alpha'], float)) or 
+                (isinstance(params['alpha'], float) and 
+                not (0 < params['alpha'] < 1))):
             QMessageBox.warning(self, "Invalid alpha", 
                 "Alpha must be a real number between 0 and 1 (exclusive).")
             return
@@ -276,17 +395,16 @@ class MainWindow(QMainWindow):
                 "Bound mode must be 'pacbayes', 'vapnik', 'igp' or 'igp_approx'.")
             return
 
-        if ((not isinstance(params['eta'], float)) 
-        or (isinstance(params['eta'], float) and not (0 < params['eta'] < 1))):
+        if ((not isinstance(params['eta'], float)) or 
+                (isinstance(params['eta'], float) and not (0 < params['eta'] < 1))):
             QMessageBox.warning(self, "Invalid eta free parameter", 
-                "Eta must be a real number between 0 and 1 (exclusive).")
+            "Eta must be a real number between 0 and 1 (exclusive).")
             return
 
-        if ((not isinstance(params['dropout_rate'], float)) 
-        or (isinstance(params['dropout_rate'], float) 
-        and not (0 <= params['dropout_rate'] <= 1))):
-            QMessageBox.warning(self, 
-                "Invalid dropout rate free parameter of PAC-Bayes",
+        if ((not isinstance(params['dropout_rate'], float)) or 
+                (isinstance(params['dropout_rate'], float) and 
+                not (0 <= params['dropout_rate'] <= 1))):
+            QMessageBox.warning(self, "Invalid dropout rate free parameter of PAC-Bayes", 
                 "Dropout rate of PAC-Bayes must be a real number between 0 and 1 (inclusive).")
             return
 
@@ -299,35 +417,50 @@ class MainWindow(QMainWindow):
                            title='Computing SAR analysis ...')
 
     def show_stats(self):
+        """
+        Display the results of the SAR analysis in the output text box.
+
+        Shows sample size, loss, threshold, and power.
+        """
         if self.data['stats'] is None: return
         stats = self.data['stats']
-        #if stats['loss'] < stats['thres']:
-        #    result = f'There is regression ✅'
-        #else:
-        #    result = f'There is no regression ❌'
-        #text =[result,
-        text =[f'Sample size: {self.data['x'].shape[0]}',
-              f'Loss: {stats['loss']:.4f}',
-              f'Threshold: {stats['thres']:.4f}',
-              f'Power: {stats['power']:.4f}']
+        # Compose result text
+        text =[f'Sample size: {self.data["x"].shape[0]}',
+              f'Loss: {stats["loss"]:.4f}',
+              f'Threshold: {stats["thres"]:.4f}',
+              f'Power: {stats["power"]:.4f}']
         self.txt_analysis.setText('\n'.join(text))
 
     def compute_analysis(self):
+        """
+        Compute the SAR analysis and store the results in self.data.
+
+        Uses sarlib.SAR to fit the model and obtain statistics.
+        """
         model = sarlib.SAR(**self.data['params'])
         stats = model.fit(self.data['x'], self.data['y'], verbose=False)
         self.data['stats'] = stats
         self.data['model'] = model
 
     def compute_ssa(self):
+        """
+        Compute the sample size analysis if not already computed.
+
+        Uses sarlib.SampleSizeAnalysis to perform the analysis.
+        """
         if self.data['ssa'] is not None: return  # Already computed
         if self.data['model'] is None: return    # No model available
 
         self.data['ssa'] = sarlib.SampleSizeAnalysis(self.data['model'], 
-                                                     self.data['x'], 
-                                                     self.data['y'], 
-                                                     verbose=False)
+                                self.data['x'], self.data['y'], verbose=False)
 
     def plot_ssa(self, type):
+        """
+        Plot the sample size analysis results.
+
+        Parameters:
+            type (str): Type of plot ('loss', 'pvalue', or 'coef').
+        """
         if self.data['model'] is None:
             QMessageBox.warning(self, "Error", "Please run SAR analysis first.")
             return
@@ -339,6 +472,14 @@ class MainWindow(QMainWindow):
             eval('self.data["ssa"].plot_' + type)()
 
     def run_in_thread(self, job, after_job, title='Processing ...'):
+        """
+        Run a function in a background thread and execute a callback after completion.
+
+        Parameters:
+            job (callable): Function to run in the thread.
+            after_job (callable): Function to call after job is finished.
+            title (str): Title for the progress dialog.
+        """
         def finished_job():
             progress.close()
             after_job()
@@ -356,10 +497,11 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(finished_job)
         self.worker.start()
 
-
 if __name__ == "__main__":
+    # Entry point for the application
     app = QApplication(sys.argv)
     w = MainWindow()
     w.resize(800, 800)
     w.show()
     sys.exit(app.exec())
+
